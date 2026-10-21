@@ -155,3 +155,69 @@ cargo check
 ```
 
 Record any manual-only acceptance gaps in the final handoff for the stage.
+
+## Stage 8 - One-Line Binary Installation
+
+Goal: install and upgrade published binaries using a single PowerShell command.
+
+- [x] Add an `irm ... | iex` bootstrap with automatic UAC and error propagation.
+- [x] Resolve stable/prerelease-only releases and support a pinned binary version.
+- [x] Verify SHA-256 before extracting only the three required executables.
+- [x] Protect the LocalSystem binary directory and refuse another broker installation.
+- [x] Support repeat installation, upgrade rollback, and offline full ZIP installation.
+- [x] Configure Machine/current-terminal PATH and report command conflicts.
+- [x] Publish the script and its checksum alongside release ZIP assets.
+- [x] Use the latest Release installer URL and promote normal `v0.x.y` tags to Latest.
+- [x] Add PowerShell 5.1/7 installer verification to CI and release workflows.
+- [x] Document the one-line install and upgrade in English and Chinese.
+- [x] Pass formatting, Rust test/build checks, and the PowerShell 5.1/7 harness.
+- [ ] Complete manual Windows installer acceptance.
+
+Verification:
+
+```powershell
+cargo fmt -- --check
+cargo test
+cargo check
+powershell -NoProfile -ExecutionPolicy Bypass -File tests/install.Tests.ps1
+pwsh -NoProfile -File tests/install.Tests.ps1
+```
+
+Manual acceptance: use the bootstrap scenarios in `design-testing-qa.md` on an
+x64 Windows 11 test machine. Mocked SCM/UAC tests alone do not complete this stage.
+
+Automatic verification recorded on 2026-10-21: formatting, all 51 Rust unit
+tests and `cargo check` passed; all 28 installer scenarios passed under both
+Windows PowerShell 5.1 and PowerShell 7. Live GitHub resolution selected v0.0.3,
+and download, SHA-256 verification, extraction and both CLI `--version` checks
+passed in both shells without changing the installed broker or Machine PATH.
+Actual UAC, protected Program Files ACLs and SCM install/upgrade acceptance are
+still pending. The documented public URL requires a new non-prerelease containing
+`install.ps1` to be published with the updated workflow; merging to `main` alone
+does not activate the download endpoint.
+
+## Stage 9 - Release Workflow Maintenance
+
+Goal: share CI validation and publish the exact assets produced by the verified build.
+
+- [x] Reuse CI from the tag workflow instead of duplicating validation/build steps.
+- [x] Extract release packaging into a locally runnable PowerShell script.
+- [x] Validate tag/Cargo/binary versions and enforce locked Cargo dependencies.
+- [x] Preserve ZIP layouts, asset names, standalone installer and checksum format.
+- [x] Limit release write permissions to the publish job and pass built assets as an artifact.
+- [x] Add real ZIP/content/checksum and packaging-failure tests.
+- [x] Complete local formatting, test, check and packaging verification.
+- [ ] Verify a real tag run and the public Latest installer URL after publication.
+
+See `releasing.md` for the workflow, local commands, release procedure and limits.
+
+Automatic verification recorded on 2026-10-21: formatting, Clippy, all 51 Rust
+tests, `cargo check` and the release build passed. All 29 installer scenarios
+passed in Windows PowerShell 5.1 and PowerShell 7; all 7 packaging scenarios
+passed against the release binaries. Both workflows passed actionlint, and
+local v0.0.3 packaging produced the four expected release assets. Hosted tag
+execution, publication and manual installer acceptance remain pending.
+
+Release v0.0.4 preparation on 2026-10-21 repeated all of the above local checks
+successfully with both workspace packages at 0.0.4 and produced the four expected
+assets under `dist/v0.0.4`.

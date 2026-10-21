@@ -117,6 +117,63 @@ Windows Service installation does not require an MSI or graphical installer. It 
 
 Supported no-installer flows:
 
+### One-Line PowerShell Install And Upgrade
+
+The public bootstrap entry point is `install.ps1` attached to the latest release:
+
+```powershell
+irm https://github.com/winddxr/win-symlinks/releases/latest/download/install.ps1 | iex
+```
+
+- Support Windows PowerShell 5.1 and PowerShell 7 on x64 Windows 11. Other
+  architectures fail explicitly until corresponding release binaries exist.
+- Keep the script in the repository and publish the same script as a standalone
+  release asset and inside the full ZIP; no separate website, MSI, or runtime
+  dependency is required. Both the installer entry point and the default binary
+  selection follow GitHub's latest release, with no version embedded in the command.
+  Each normal version tag (including `v0.x.y`) publishes a non-prerelease with
+  `make_latest: true`. Tags containing a prerelease suffix such as `-beta.1` use
+  `prerelease: true` and `make_latest: false` and do not replace the default release.
+  The entry point first becomes available after publishing a non-prerelease
+  containing the installer asset; merging the source to `main` alone is insufficient.
+- On every online run, the default resolves GitHub's latest stable release anew.
+  For compatibility with older prerelease-only repositories, if that endpoint returns
+  404, select the newest published non-draft release from the first 100 releases
+  and report the prerelease fallback. Propagate network/rate-limit failures.
+  `-Version v<VERSION>` pins the binary release without querying the release API.
+- From a non-admin shell, request UAC once. Pass parameters as encoded JSON,
+  verify the installer source hash after approval, and execute those same bytes
+  in memory. Propagate child failures to the original terminal. The elevated
+  process creates its result file exclusively, never overwriting a user temp file.
+- Download the version-specific full ZIP and `checksums-sha256.txt` over HTTPS
+  into administrator-controlled staging. Require exactly one matching SHA-256
+  record and verify before extracting or executing any release binary. Only
+  extract the three exact executable entries; never execute an archived script.
+  Checksums detect corruption and inconsistent assets; they do not provide
+  independent publisher authentication beyond the GitHub HTTPS trust boundary.
+- Install by default to native `%ProgramFiles%\win-symlinks`. Custom locations
+  must be direct children of native Program Files. Reject reparse points in the
+  managed paths; set the install directory owner to Administrators, with only
+  SYSTEM/Administrators full control and Users read/execute access.
+- Serialize installers. Refuse to take over a broker registered at another path.
+  For an upgrade, back up binaries, stop the broker, replace files, and use the
+  existing service registration. For a fresh install, use the existing management
+  CLI to register the service. Start and query the service before committing PATH.
+- Restore old files, Machine PATH, and the prior running/stopped service state
+  after failure. Remove a partially installed new service. If recovery also
+  fails, retain old binaries in a reported `recovery-<id>` directory. A running
+  CLI can lock its binary; fail and recover rather than terminating that process.
+- Prepend the install directory to Machine PATH without duplicates, broadcast
+  the environment change, and update the initiating terminal's PATH after success.
+  Warn about PowerShell aliases that still shadow `ln`; do not modify profiles.
+- Running the extracted script without `-Version` installs the three neighboring
+  binaries offline. Partial offline packages fail explicitly. Supplying `-Version`
+  requests an online release install even if neighboring binaries exist.
+
+The existing service identity, pipe security, and real symbolic link creation
+contracts are unchanged. Installation manages availability; it does not grant
+the user shell symlink privileges or enable Developer Mode.
+
 ### Built-In Install Command
 
 Preferred:

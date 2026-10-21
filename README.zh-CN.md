@@ -26,11 +26,11 @@ User shell -> ln.exe -> Named Pipe -> WinSymlinksBroker -> CreateSymbolicLinkW
 
 ## 系统要求 (Requirements)
 
-- Windows 11。
-- Rust 1.82 或更高版本。
-- Cargo。
+- Windows 11（预编译版本目前支持 x64），Windows PowerShell 5.1 或 PowerShell 7。
 - 需要管理员权限以进行服务安装、服务启动/停止以及服务卸载。
 - 支持符号链接的文件系统和 Windows 策略配置。
+
+只有从源码构建时才需要 Rust 1.82 或更高版本及 Cargo。
 
 代理服务适用于禁用了 Developer Mode (开发者模式) 或当前用户没有 `SeCreateSymbolicLinkPrivilege` 权限的计算机。
 
@@ -63,15 +63,33 @@ cargo run --bin ln -- --help
 cargo run --bin win-symlinks -- --help
 ```
 
+本地打包和发布步骤见 [Release 工作流](dev-docs/releasing.md)。
+
 ## 快速安装 (Quick Install)
 
-从 [Releases](https://github.com/winddxr/win-symlinks/releases) 页面下载固定 tag 对应的发布 zip 文件，使用 `checksums-sha256.txt` 校验后提取文件，然后以管理员身份运行 `install.ps1`：
+在 PowerShell 中运行下面一行命令，批准 Windows 管理员授权提示后等待安装完成：
 
 ```powershell
-.\install.ps1
+irm https://github.com/winddxr/win-symlinks/releases/latest/download/install.ps1 | iex
 ```
 
-该脚本会将三个可执行文件复制到 `C:\Program Files\win-symlinks`（或通过 `-InstallDir` 指定的自定义路径），将该目录添加到系统 `PATH`，注册并启动 Broker Service (代理服务)，然后运行冒烟测试以验证安装。
+命令会获取最新 Release 中的安装脚本；脚本每次运行都会重新查询、下载并校验最新 Release，
+安装到 `C:\Program Files\win-symlinks`，启动代理服务并配置 `PATH`。
+无需安装 Rust。
+
+普通版本标签（包括 `v0.x.y`）会发布为最新 Release；
+`v0.1.0-beta.1` 等明确的预发布版本不会覆盖此入口。
+
+**升级：** 再运行同一条命令即可。升级前请退出仍在运行的 `ln.exe` 或 `win-symlinks.exe` 进程。
+
+指定版本安装：
+
+```powershell
+& ([scriptblock]::Create((irm https://github.com/winddxr/win-symlinks/releases/latest/download/install.ps1))) -Version v0.0.4
+```
+
+离线安装：从 [Releases](https://github.com/winddxr/win-symlinks/releases) 下载并校验完整 ZIP，
+解压后在该目录运行 `.\install.ps1`。
 
 每个 release 还会发布名为
 `win-symlinks-broker-v<VERSION>-x86_64-windows.zip` 的 broker-only runtime

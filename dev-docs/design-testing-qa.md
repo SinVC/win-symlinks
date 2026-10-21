@@ -71,6 +71,50 @@ Expected result:
 
 ## Acceptance Criteria
 
+### PowerShell Bootstrap Verification
+
+Run the dependency-free installer harness under both supported shells:
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File tests/install.Tests.ps1
+pwsh -NoProfile -File tests/install.Tests.ps1
+```
+
+It exercises real file copying, ZIP extraction, checksum verification and rollback,
+with SCM, downloads, Machine PATH and UAC replaced by controlled test doubles.
+The elevation child protocol is exercised in a real unelevated PowerShell process
+using harmless payloads, including argument quoting and source tampering.
+These tests do not install or change a developer's broker service.
+
+Before releasing the bootstrap, verify on an x64 Windows 11 test machine:
+
+- Run the documented `irm ... | iex` from both PowerShell 5.1 and 7 in a normal
+  terminal; accept UAC and verify service registration, restricted installation
+  ACLs, PATH in that terminal, and true file/directory symlinks from a normal user.
+- Cancel UAC and confirm a visible error and no installed service or PATH change.
+- Rerun to upgrade an existing installation. Verify a locked CLI binary causes
+  rollback, the service still runs, and unrelated config/audit files are preserved.
+- Confirm a broker installed elsewhere is refused without changing its registration.
+- Install the verified extracted full ZIP without network access.
+- Confirm mismatched checksums and unsupported architectures stop before binary
+  replacement or service changes. Inspect other terminal instances for PATH refresh.
+
+Actual UAC approval, protected Program Files ACLs, SCM changes, and non-admin
+symbolic link creation remain manual acceptance checks beyond the harness.
+
+### Release Packaging Verification
+
+After `cargo build --locked --release --workspace`, run
+`pwsh -NoProfile -File tests/package-release.Tests.ps1`.
+This uses the real built executables to verify ZIP root layouts, entry contents,
+standalone installer identity, and checksum compatibility with the installer.
+It also checks rejection of wrong tags, missing or incorrect binaries, and stale
+output files, plus safe repeat packaging. It never publishes a GitHub release.
+
+CI and the tag workflow share these checks. Hosted workflow execution, artifact
+transfer, Release publication and the public Latest URL still require a real tag
+run; see `releasing.md` for the procedure.
+
 - The design document exists at `docs/windows-symlink-broker-design.md`. (Note: originally as a single document, now split into multiple focused documents).
 - The project is consistently named `win-symlinks`.
 - `ln.exe` is the Linux-compatible command name.

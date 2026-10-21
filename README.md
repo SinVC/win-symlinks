@@ -30,12 +30,12 @@ Windows symbolic link semantics.
 
 ## Requirements
 
-- Windows 11.
-- Rust 1.82 or newer.
-- Cargo.
+- Windows 11 (x64 for prebuilt releases), with Windows PowerShell 5.1 or PowerShell 7.
 - Administrator rights for service installation, service start/stop, and service
   removal.
 - A filesystem and Windows policy configuration that support symbolic links.
+
+Rust 1.82 or newer and Cargo are only needed when building from source.
 
 The broker service is intended for machines where Developer Mode is disabled or
 the current user does not have `SeCreateSymbolicLinkPrivilege`.
@@ -69,20 +69,37 @@ cargo run --bin ln -- --help
 cargo run --bin win-symlinks -- --help
 ```
 
+See [Release workflow](dev-docs/releasing.md) for local packaging and publication.
+
 ## Quick Install
 
-Download a tagged release zip from the
-[Releases](https://github.com/winddxr/win-symlinks/releases) page, verify it
-against `checksums-sha256.txt`, extract the files, then run `install.ps1` as
-Administrator:
+Run this in PowerShell, approve the Windows administrator prompt, and wait for
+installation to finish:
 
 ```powershell
-.\install.ps1
+irm https://github.com/winddxr/win-symlinks/releases/latest/download/install.ps1 | iex
 ```
 
-The script copies the three executables to `C:\Program Files\win-symlinks` (or a
-custom path via `-InstallDir`), adds the directory to Machine `PATH`, registers
-and starts the broker service, and runs a smoke test to verify the installation.
+The command fetches the latest released installer. The script resolves and
+verifies the latest release on each run, then installs it in
+`C:\Program Files\win-symlinks`, starts the broker service, and configures `PATH`.
+No Rust toolchain is required.
+
+Normal version tags, including `v0.x.y`, publish as the latest release.
+Explicit prerelease tags such as `v0.1.0-beta.1` do not replace it.
+
+**Upgrade:** run the same command again. Close any running `ln.exe` or
+`win-symlinks.exe` processes first.
+
+To install a specific version:
+
+```powershell
+& ([scriptblock]::Create((irm https://github.com/winddxr/win-symlinks/releases/latest/download/install.ps1))) -Version v0.0.4
+```
+
+For offline installation, download and verify the full ZIP from
+[Releases](https://github.com/winddxr/win-symlinks/releases), extract it, and run
+`.\install.ps1` from the extracted directory.
 
 Each release also publishes a broker-only runtime asset named
 `win-symlinks-broker-v<VERSION>-x86_64-windows.zip`. It contains only

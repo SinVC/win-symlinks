@@ -18,7 +18,7 @@ Download broker runtime releases by fixed tag, not by a floating `latest` URL.
 For example:
 
 ```powershell
-$Version = "v0.0.3"
+$Version = "v0.0.4"
 $BaseUrl = "https://github.com/winddxr/win-symlinks/releases/download/$Version"
 $Asset = "win-symlinks-broker-$Version-x86_64-windows.zip"
 

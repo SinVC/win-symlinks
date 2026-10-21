@@ -625,7 +625,7 @@ checksum = "72069c3113ab32ab29e5584db3c6ec55d416895e60715417b5b883a357c3e471"
 
 [[package]]
 name = "win-symlinks"
-version = "0.0.3"
+version = "0.0.4"
 dependencies = [
  "clap",
  "serde",
@@ -640,7 +640,7 @@ dependencies = [
 
 [[package]]
 name = "win-symlinks-client"
-version = "0.0.3"
+version = "0.0.4"
 dependencies = [
  "serde",
  "serde_json",
